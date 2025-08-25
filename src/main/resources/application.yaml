@@ -1,0 +1,33 @@
+server:
+  servlet:
+    context-path: /api
+spring:
+  application:
+    name: learnredis
+  datasource:
+    url: jdbc:postgresql://localhost:5432/demo_redis
+    username: postgres
+    password: postgres
+    hikari:
+      maximum-pool-size: 30
+      minimum-idle: 10
+      connection-timeout: 2000
+      max-lifetime: 18000
+      idle-timeout: 30000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+  redis:
+    cluster:
+      nodes:
+        - 127.0.0.1:7001
+        - 127.0.0.1:7002
+        - 127.0.0.1:7003
+      password: 2685
+      username: hmd1
