@@ -1,11 +1,12 @@
 package com.hmd.learnredis.services;
 
-import com.hmd.learnredis.dtos.CreateUserRequest;
-import com.hmd.learnredis.dtos.UpdateUserRequest;
 import com.hmd.learnredis.dtos.UserDTO;
+import com.hmd.learnredis.dtos.requests.CreateUserRequest;
+import com.hmd.learnredis.dtos.requests.UpdateUserRequest;
 import com.hmd.learnredis.exceptions.RoleNotFoundException;
 import com.hmd.learnredis.exceptions.UserNotFoundException;
 import com.hmd.learnredis.exceptions.UsernameAlreadyExistsException;
+import com.hmd.learnredis.mappers.UserMapper;
 import com.hmd.learnredis.models.Role;
 import com.hmd.learnredis.models.User;
 import com.hmd.learnredis.repositories.RoleRepository;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +28,8 @@ import java.util.stream.Collectors;
 public class UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final UserMapper userMapper;
 
     @Transactional
     @CachePut(cacheNames = "users", key = "#result.id")
@@ -35,15 +39,11 @@ public class UserService {
         Set<Role> roles = request.getRoles().stream().map(roleName -> roleRepository.findByRoleName(roleName).orElseThrow(() -> new RoleNotFoundException("Role not found: " + roleName))).collect(Collectors.toSet());
         User newUser = User.builder()
                 .username(request.getUsername())
-                .password(request.getPassword())
+                .password(passwordEncoder.encode(request.getPassword()))
                 .roles(roles)
                 .build();
         User savedUser = userRepository.save(newUser);
-        return UserDTO.builder()
-                .id(savedUser.getId())
-                .username(savedUser.getUsername())
-                .roles(savedUser.getRoles().stream().map(Role::getRoleName).collect(Collectors.toSet()))
-                .build();
+        return userMapper.toUserDTO(savedUser);
     }
 
     @Transactional
@@ -58,11 +58,7 @@ public class UserService {
         Set<Role> roles = request.getRoles().stream().map(roleName -> roleRepository.findByRoleName(roleName).orElseThrow(() -> new RoleNotFoundException("Role not found: " + roleName))).collect(Collectors.toSet());
         user.setRoles(roles);
         User savedUser = userRepository.save(user);
-        return UserDTO.builder()
-                .id(id)
-                .username(savedUser.getUsername())
-                .roles(savedUser.getRoles().stream().map(Role::getRoleName).collect(Collectors.toSet()))
-                .build();
+        return userMapper.toUserDTO(savedUser);
     }
 
     @Transactional
@@ -75,10 +71,7 @@ public class UserService {
     @Cacheable(cacheNames = "users", key = "#id")
     public UserDTO getUserById(Long id) {
         User user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(String.format("User with id %s not found", id)));
-        return UserDTO.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .roles(user.getRoles().stream().map(Role::getRoleName).collect(Collectors.toSet()))
-                .build();
+        return userMapper.toUserDTO(user);
     }
+
 }

@@ -4,6 +4,9 @@ import com.hmd.learnredis.dtos.ErrorResponseDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -23,13 +26,8 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(status).body(ErrorResponseDTO.builder().message(message).errorDetails(errors).build());
     }
 
-    @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<ErrorResponseDTO> handleUserNotFoundException(UserNotFoundException e) {
-        return buildErrorResponse(HttpStatus.NOT_FOUND, e.getMessage(), null);
-    }
-
-    @ExceptionHandler(RoleNotFoundException.class)
-    public ResponseEntity<ErrorResponseDTO> handleRoleNotFoundException(RoleNotFoundException e) {
+    @ExceptionHandler({UserNotFoundException.class, RoleNotFoundException.class, RefreshTokenNotFoundException.class})
+    public ResponseEntity<ErrorResponseDTO> handleNotFoundException(RuntimeException e) {
         return buildErrorResponse(HttpStatus.NOT_FOUND, e.getMessage(), null);
     }
 
@@ -63,6 +61,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponseDTO> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e) {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, "Data type mismatch", null);
+    }
+
+    @ExceptionHandler({UsernameNotFoundException.class, BadCredentialsException.class, TokenExpiredException.class, InvalidJwtException.class})
+    public ResponseEntity<ErrorResponseDTO> handleLoginExceptions(RuntimeException e) {
+        return buildErrorResponse(HttpStatus.UNAUTHORIZED, e.getMessage(), null);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponseDTO> handleAccessDeniedException(AccessDeniedException e) {
+        return buildErrorResponse(HttpStatus.FORBIDDEN, e.getMessage(), null);
     }
 
     @ExceptionHandler(Exception.class)

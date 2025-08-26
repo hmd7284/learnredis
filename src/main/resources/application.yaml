@@ -1,6 +1,3 @@
-server:
-  servlet:
-    context-path: /api
 spring:
   application:
     name: learnredis
@@ -31,3 +28,8 @@ spring:
         - 127.0.0.1:7003
       password: 2685
       username: hmd1
+
+jwt:
+  accessExpiration: 86400
+  refreshExpiration: 2592000
+  secret: 2f8925eaa600fb7578d7cfe32c547370e66fb3ac87d79f2ce3a584689f54bb8c

@@ -1,4 +1,4 @@
-package com.hmd.learnredis.dtos;
+package com.hmd.learnredis.dtos.requests;
 
 import lombok.Getter;
 import lombok.Setter;
