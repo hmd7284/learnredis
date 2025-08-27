@@ -1,5 +1,6 @@
 #!/bin/bash
-for i in {1..9}; do
+source .env
+for i in {1..6}; do
   port=$((7000 + i))
   bus_port=$((17000 + i))
 
@@ -12,6 +13,6 @@ appendonly yes
 cluster-announce-ip 127.0.0.1
 cluster-announce-port $port
 cluster-announce-bus-port $bus_port
-requirepass redis
+user $REDIS_USERNAME on >$REDIS_PASSWORD ~* &* +@all -@admin -@dangerous
 EOF
 done

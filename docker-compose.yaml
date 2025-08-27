@@ -3,11 +3,11 @@ services:
     image: postgres:16
     container_name: demo_redis
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: demo_redis
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "5432:5432"
+      - ${POSTGRES_PORT}:5432
     volumes:
       - ./initdb.sql:/docker-entrypoint-initdb.d/initdb.sql
       - demo-redis-data:/var/lib/postgresql/data
