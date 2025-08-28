@@ -1,7 +1,6 @@
 package com.hmd.learnredis.models;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import javax.persistence.*;
 import java.util.HashSet;
@@ -11,6 +10,9 @@ import java.util.Set;
 @Setter
 @Entity
 @Table(name = "roles")
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Role {
     @Id
     private Long id;

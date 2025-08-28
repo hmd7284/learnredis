@@ -54,9 +54,9 @@ public class UserService {
         if (existingUser.isPresent() && !existingUser.get().getId().equals(user.getId()))
             throw new UsernameAlreadyExistsException(String.format("Username %s already exists", request.getUsername()));
         user.setUsername(request.getUsername());
-        user.setPassword(request.getPassword());
         Set<Role> roles = request.getRoles().stream().map(roleName -> roleRepository.findByRoleName(roleName).orElseThrow(() -> new RoleNotFoundException("Role not found: " + roleName))).collect(Collectors.toSet());
         user.setRoles(roles);
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
         User savedUser = userRepository.save(user);
         return userMapper.toUserDTO(savedUser);
     }
