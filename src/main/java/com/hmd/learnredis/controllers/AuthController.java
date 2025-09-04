@@ -3,6 +3,7 @@ package com.hmd.learnredis.controllers;
 import com.hmd.learnredis.dtos.ResponseDTO;
 import com.hmd.learnredis.dtos.requests.LoginRequest;
 import com.hmd.learnredis.dtos.requests.RefreshTokenRequest;
+import com.hmd.learnredis.dtos.requests.RegisterRequest;
 import com.hmd.learnredis.services.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -39,5 +40,14 @@ public class AuthController {
     @ResponseStatus(HttpStatus.OK)
     public void logout(HttpServletRequest request) {
         authService.logout(request);
+    }
+
+    @PostMapping("/register")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ResponseDTO register(@RequestBody @Valid RegisterRequest registerRequest) {
+        return ResponseDTO.builder()
+                .message("Successfully registered account")
+                .data(authService.register(registerRequest))
+                .build();
     }
 }

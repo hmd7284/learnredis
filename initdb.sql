@@ -2,14 +2,14 @@
 CREATE TABLE users
 (
     id       SERIAL PRIMARY KEY,
-    username VARCHAR(255),
-    password VARCHAR(255)
+    username VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE roles
 (
     id        SERIAL PRIMARY KEY,
-    role_name VARCHAR(255)
+    role_name VARCHAR(255) NOT NULL UNIQUE
 );
 
 CREATE TABLE user_roles
@@ -30,32 +30,38 @@ CREATE TABLE refresh_tokens
     CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users (id)
 );
 
-WITH new_roles AS (
-INSERT
-INTO roles (role_name)
-VALUES ('ADMIN'), ('USER')
-    RETURNING id, role_name
-    ), new_admin AS (
-INSERT
-INTO users (username, password)
--- bcrypt hash of "admin123"
-VALUES ('admin', '$2a$12$HdF7ckVhyOUJ7w5hGohPf.iylz3N6zdM1XeTuK.IBHm9hlQNkJjVG')
-    RETURNING id
-    ), new_user AS (
-INSERT
-INTO users (username, password)
--- bcrypt hash of "user123"
-VALUES ('user', '$2a$12$NWl0F5Y.5BuBtVe4Uo/B.ueKDk02EI1U240PPWYM/GHKUwVlkbMH6')
-    RETURNING id
-    )
-INSERT
-INTO user_roles (user_id, role_id)
-SELECT na.id, nr.id
-FROM new_admin na
-         JOIN new_roles nr ON nr.role_name = 'ADMIN'
 
-UNION ALL
+CREATE TABLE products
+(
+    id           SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    price        float        NOT NULL,
+    quantity     integer      NOT NULL
+);
 
-SELECT nu.id, nr.id
-FROM new_user nu
-         JOIN new_roles nr ON nr.role_name = 'USER';
+INSERT INTO roles (role_name)
+VALUES ('ADMIN'),
+       ('USER'),
+       ('PRODUCT_MANAGER');
+
+INSERT INTO users(username, password)
+-- bcrypt hash of admin123
+VALUES ('admin', '$2a$12$HdF7ckVhyOUJ7w5hGohPf.iylz3N6zdM1XeTuK.IBHm9hlQNkJjVG');
+-- bcrypt hash of pm123
+INSERT INTO users(username, password)
+VALUES ('product_manager', '$2a$12$LTKxbcSzhg77glgA9Zje2ek1PjLI2vBZ2UOZPBkfOTR84cJvgCJxe');
+
+-- Grant roles to users
+-- admin -> ADMIN
+INSERT INTO user_roles (user_id, role_id)
+SELECT u.id, r.id
+FROM users u
+         JOIN roles r ON r.role_name = 'ADMIN'
+WHERE u.username = 'admin';
+
+-- product_manager -> PRODUCT_MANAGER
+INSERT INTO user_roles (user_id, role_id)
+SELECT u.id, r.id
+FROM users u
+         JOIN roles r ON r.role_name = 'PRODUCT_MANAGER'
+WHERE u.username = 'product_manager';

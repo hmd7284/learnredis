@@ -1,51 +1,32 @@
 package com.hmd.learnredis.controllers;
 
 import com.hmd.learnredis.dtos.ResponseDTO;
-import com.hmd.learnredis.dtos.requests.CreateUserRequest;
-import com.hmd.learnredis.dtos.requests.UpdateUserRequest;
+import com.hmd.learnredis.dtos.requests.UpdatePasswordRequest;
+import com.hmd.learnredis.models.CustomUserDetails;
 import com.hmd.learnredis.services.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
-
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/api/users/me")
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
 
-    @GetMapping("/{id}")
+    @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public ResponseDTO findUser(@PathVariable Long id) {
+    public ResponseDTO getMe(@AuthenticationPrincipal CustomUserDetails me) {
         return ResponseDTO.builder()
-                .message("Successfully retrieved user")
-                .data(userService.getUserById(id))
+                .message("Successfully retrieved personal info")
+                .data(userService.getUserById(me.getId()))
                 .build();
     }
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public ResponseDTO createUser(@RequestBody @Valid CreateUserRequest request) {
-        return ResponseDTO.builder()
-                .message("Successfully created new user")
-                .data(userService.createUser(request))
-                .build();
-    }
-
-    @PutMapping("/{id}")
-    @ResponseStatus(HttpStatus.OK)
-    public ResponseDTO updateUser(@PathVariable Long id, @RequestBody UpdateUserRequest updateUserRequest) {
-        return ResponseDTO.builder()
-                .message("Successfully updated user")
-                .data(userService.updateUser(id, updateUserRequest))
-                .build();
-    }
-
-    @DeleteMapping("/{id}")
+    @PatchMapping("/password")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteUser(@PathVariable Long id) {
-        userService.deleteUser(id);
+    public void updatePassword(@AuthenticationPrincipal CustomUserDetails me, UpdatePasswordRequest request) {
+        userService.updatePassword(me.getId(), request);
     }
 }

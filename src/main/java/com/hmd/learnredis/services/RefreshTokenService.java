@@ -1,6 +1,6 @@
 package com.hmd.learnredis.services;
 
-import com.hmd.learnredis.exceptions.RefreshTokenNotFoundException;
+import com.hmd.learnredis.exceptions.NotFoundException;
 import com.hmd.learnredis.exceptions.TokenExpiredException;
 import com.hmd.learnredis.models.RefreshToken;
 import com.hmd.learnredis.models.User;
@@ -33,7 +33,7 @@ public class RefreshTokenService {
 
     @Transactional
     public RefreshToken findByToken(String token) {
-        return refreshTokenRepository.findByToken(token).orElseThrow(() -> new RefreshTokenNotFoundException("Refresh token not found"));
+        return refreshTokenRepository.findByToken(token).orElseThrow(() -> new NotFoundException("Refresh token not found"));
     }
 
     @Transactional

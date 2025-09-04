@@ -26,13 +26,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(status).body(ErrorResponseDTO.builder().message(message).errorDetails(errors).build());
     }
 
-    @ExceptionHandler({UserNotFoundException.class, RoleNotFoundException.class, RefreshTokenNotFoundException.class})
+    @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<ErrorResponseDTO> handleNotFoundException(RuntimeException e) {
         return buildErrorResponse(HttpStatus.NOT_FOUND, e.getMessage(), null);
     }
 
-    @ExceptionHandler(UsernameAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponseDTO> handleUsernameAlreadyExistsException(UsernameAlreadyExistsException e) {
+    @ExceptionHandler(AlreadyExistsException.class)
+    public ResponseEntity<ErrorResponseDTO> handleUsernameAlreadyExistsException(AlreadyExistsException e) {
         return buildErrorResponse(HttpStatus.CONFLICT, e.getMessage(), null);
     }
 
@@ -71,6 +71,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponseDTO> handleAccessDeniedException(AccessDeniedException e) {
         return buildErrorResponse(HttpStatus.FORBIDDEN, e.getMessage(), null);
+    }
+
+    @ExceptionHandler(PasswordException.class)
+    public ResponseEntity<ErrorResponseDTO> handlePasswordMismatchException(PasswordException e) {
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage(), null);
     }
 
     @ExceptionHandler(Exception.class)

@@ -2,19 +2,24 @@ package com.hmd.learnredis.services;
 
 import com.hmd.learnredis.dtos.UserDTO;
 import com.hmd.learnredis.dtos.requests.CreateUserRequest;
+import com.hmd.learnredis.dtos.requests.SearchRequest;
+import com.hmd.learnredis.dtos.requests.UpdatePasswordRequest;
 import com.hmd.learnredis.dtos.requests.UpdateUserRequest;
-import com.hmd.learnredis.exceptions.RoleNotFoundException;
-import com.hmd.learnredis.exceptions.UserNotFoundException;
-import com.hmd.learnredis.exceptions.UsernameAlreadyExistsException;
+import com.hmd.learnredis.dtos.responses.Meta;
+import com.hmd.learnredis.dtos.responses.PaginatedResponse;
+import com.hmd.learnredis.exceptions.AlreadyExistsException;
+import com.hmd.learnredis.exceptions.NotFoundException;
+import com.hmd.learnredis.exceptions.PasswordException;
 import com.hmd.learnredis.mappers.UserMapper;
 import com.hmd.learnredis.models.Role;
 import com.hmd.learnredis.models.User;
 import com.hmd.learnredis.repositories.RoleRepository;
 import com.hmd.learnredis.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.CachePut;
-import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,48 +35,90 @@ public class UserService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
+    private final RedisService redisService;
 
     @Transactional
-    @CachePut(cacheNames = "users", key = "#result.id")
+    public PaginatedResponse getUsers(SearchRequest searchRequest) {
+        Pageable pageable = PageRequest.of(searchRequest.getPage() - 1, searchRequest.getPageSize());
+        Page<UserDTO> results = userRepository.findAll(pageable).map(userMapper::toUserDTO);
+        return PaginatedResponse.builder()
+                .meta(Meta.builder()
+                        .page(results.getNumber() + 1)
+                        .size(results.getSize())
+                        .totalPages(results.getTotalPages())
+                        .totalElements(results.getTotalElements())
+                        .build())
+                .data(results.getContent())
+                .build();
+    }
+
+    @Transactional
     public UserDTO createUser(CreateUserRequest request) {
         if (userRepository.findByUsername(request.getUsername()).isPresent())
-            throw new UsernameAlreadyExistsException(String.format("Username %s already exists", request.getUsername()));
-        Set<Role> roles = request.getRoles().stream().map(roleName -> roleRepository.findByRoleName(roleName).orElseThrow(() -> new RoleNotFoundException("Role not found: " + roleName))).collect(Collectors.toSet());
+            throw new AlreadyExistsException(String.format("Username %s already exists", request.getUsername()));
+        Set<Role> roles = request.getRoles().stream().map(roleName -> roleRepository.findByRoleName(roleName).orElseThrow(() -> new NotFoundException("Role not found: " + roleName))).collect(Collectors.toSet());
         User newUser = User.builder()
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .roles(roles)
                 .build();
         User savedUser = userRepository.save(newUser);
-        return userMapper.toUserDTO(savedUser);
+        UserDTO userDTO = userMapper.toUserDTO(savedUser);
+        redisService.put(String.format("user:%s", savedUser.getId()), userDTO);
+        return userDTO;
     }
 
     @Transactional
-    @CachePut(cacheNames = "users", key = "#id")
     public UserDTO updateUser(Long id, UpdateUserRequest request) {
-        User user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(String.format("User with id %s not found", id)));
-        Optional<User> existingUser = userRepository.findByUsername(request.getUsername());
-        if (existingUser.isPresent() && !existingUser.get().getId().equals(user.getId()))
-            throw new UsernameAlreadyExistsException(String.format("Username %s already exists", request.getUsername()));
-        user.setUsername(request.getUsername());
-        Set<Role> roles = request.getRoles().stream().map(roleName -> roleRepository.findByRoleName(roleName).orElseThrow(() -> new RoleNotFoundException("Role not found: " + roleName))).collect(Collectors.toSet());
+        User user = userRepository.findById(id).orElseThrow(() -> new NotFoundException(String.format("User with id %s not found", id)));
+        if (user.getRoles().stream().anyMatch(role -> role.getRoleName().equals("ADMIN")))
+            throw new AccessDeniedException("You are not authorized to perform this operation");
+        if (!user.getUsername().equals(request.getUsername())) {
+            Optional<User> existingUser = userRepository.findByUsername(request.getUsername());
+            if (existingUser.isPresent())
+                throw new AlreadyExistsException(String.format("Username %s already exists", request.getUsername()));
+            user.setUsername(request.getUsername());
+        }
+        Set<Role> roles = request.getRoles().stream().map(roleName -> roleRepository.findByRoleName(roleName).orElseThrow(() -> new NotFoundException("Role not found: " + roleName))).collect(Collectors.toSet());
         user.setRoles(roles);
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
         User savedUser = userRepository.save(user);
-        return userMapper.toUserDTO(savedUser);
+        UserDTO userDTO = userMapper.toUserDTO(savedUser);
+        redisService.put(String.format("user:%s", id), userDTO);
+        return userDTO;
     }
 
     @Transactional
-    @CacheEvict(cacheNames = "users", key = "#id")
     public void deleteUser(Long id) {
+        User user = userRepository.findById(id).orElseThrow(() -> new NotFoundException(String.format("User with id %s not found", id)));
+        if (user.getRoles().stream().anyMatch(role -> role.getRoleName().equals("ADMIN")))
+            throw new AccessDeniedException("You are not authorized to perform this operation");
         userRepository.deleteById(id);
+        redisService.delete(String.format("user:%s", id));
     }
 
     @Transactional(readOnly = true)
-    @Cacheable(cacheNames = "users", key = "#id")
     public UserDTO getUserById(Long id) {
-        User user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(String.format("User with id %s not found", id)));
+        String key = String.format("user:%s", id);
+        Optional<Object> cachedUser = redisService.get(key);
+
+        if (cachedUser.isPresent())
+            return (UserDTO) cachedUser.get();
+        if (redisService.get(key, UserDTO.class).isPresent())
+            return redisService.get(key, UserDTO.class).get();
+        User user = userRepository.findById(id).orElseThrow(() -> new NotFoundException(String.format("User with id %s not found", id)));
         return userMapper.toUserDTO(user);
     }
 
+    @Transactional
+    public void updatePassword(Long id, UpdatePasswordRequest request) {
+        User user = userRepository.findById(id).orElseThrow(() -> new NotFoundException(String.format("User with id %s not found", id)));
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword()))
+            throw new PasswordException("Provided old password does not match the current password");
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPassword()))
+            throw new PasswordException("New password is the same as old password");
+        if (!request.getNewPassword().equals(request.getConfirmNewPassword()))
+            throw new PasswordException("Confirm password mismatch");
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+    }
 }

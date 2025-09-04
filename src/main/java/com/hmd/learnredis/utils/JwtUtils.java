@@ -10,6 +10,7 @@ import com.nimbusds.jwt.SignedJWT;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import javax.servlet.http.HttpServletRequest;
 import java.text.ParseException;
 import java.util.Date;
 
@@ -19,6 +20,14 @@ public class JwtUtils {
     private String secret;
     @Value("${jwt.accessExpiration}")
     private Long expiration;
+
+    public String extractToken(HttpServletRequest request) {
+        String bearerToken = request.getHeader("Authorization");
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7);
+        }
+        throw new InvalidJwtException("Bearer token is required");
+    }
 
     public String generateToken(String username) {
         JWSHeader jwsHeader = new JWSHeader.Builder(JWSAlgorithm.HS512).type(JOSEObjectType.JWT).build();

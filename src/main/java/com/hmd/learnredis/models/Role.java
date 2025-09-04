@@ -15,9 +15,10 @@ import java.util.Set;
 @AllArgsConstructor
 public class Role {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "roleName")
+    @Column(name = "role_name", nullable = false, unique = true)
     private String roleName;
 
     @ManyToMany(mappedBy = "roles")

@@ -4,6 +4,7 @@ import com.hmd.learnredis.filters.JwtFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -43,8 +44,11 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         http.csrf().disable();
         http.authorizeHttpRequests()
-                .antMatchers("/auth/**").permitAll()
-                .antMatchers("/api/users/**").hasRole("ADMIN");
+                .antMatchers("/api/users", "/api/users/{id}").hasRole("ADMIN")
+                .antMatchers("/api/users/me/**").hasAnyRole("ADMIN", "USER")
+                .antMatchers(HttpMethod.GET, "/api/products/**").permitAll()
+                .antMatchers("/api/products/**").hasRole("PRODUCT_MANAGER")
+                .antMatchers("/auth/**").permitAll();
         http.exceptionHandling().authenticationEntryPoint(jwtAuthenticationEntryPoint);
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
