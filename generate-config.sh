@@ -13,6 +13,6 @@ appendonly yes
 cluster-announce-ip 127.0.0.1
 cluster-announce-port $port
 cluster-announce-bus-port $bus_port
-user $REDIS_USERNAME on >$REDIS_PASSWORD ~* &* +@all -@admin -@dangerous
+user $REDIS_USERNAME on >$REDIS_PASSWORD ~* &* +@all
 EOF
 done

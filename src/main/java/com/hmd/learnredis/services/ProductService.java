@@ -41,7 +41,7 @@ public class ProductService {
 
     @Transactional
     public ProductDTO createProduct(CreateProductRequest request) {
-        if (productRepository.findByName(request.getName()).isPresent())
+        if (productRepository.existsByName(request.getName()))
             throw new AlreadyExistsException(String.format("Product %s already exists", request.getName()));
         Product newProduct = Product.builder()
                 .name(request.getName())
@@ -58,8 +58,7 @@ public class ProductService {
     public ProductDTO updateProduct(Long id, UpdateProductRequest request) {
         Product product = productRepository.findById(id).orElseThrow(() -> new NotFoundException(String.format("Product %s not found", id)));
         if (!product.getName().equals(request.getName())) {
-            Optional<Product> existingProduct = productRepository.findByName(request.getName());
-            if (existingProduct.isPresent())
+            if (productRepository.existsByName(request.getName()))
                 throw new AlreadyExistsException(String.format("Product %s already exists", request.getName()));
             product.setName(request.getName());
         }
@@ -83,7 +82,7 @@ public class ProductService {
         Optional<Object> value = redisService.get(key);
         if (value.isPresent())
             return (ProductDTO) value.get();
-        Product product = productRepository.findById(id).orElseThrow(() -> new NotFoundException(String.format("Product %s not found", id)));
+        Product product = productRepository.findById(id).orElseThrow(() -> new NotFoundException(String.format("Product with id %s not found", id)));
         return productMapper.toProductDTO(product);
     }
 }

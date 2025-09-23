@@ -6,6 +6,8 @@ CREATE TABLE users
     password VARCHAR(255) NOT NULL
 );
 
+CREATE UNIQUE INDEX idx_users_username ON users (username);
+
 CREATE TABLE roles
 (
     id        SERIAL PRIMARY KEY,
@@ -33,11 +35,13 @@ CREATE TABLE refresh_tokens
 
 CREATE TABLE products
 (
-    id           SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL UNIQUE,
-    price        float        NOT NULL,
-    quantity     integer      NOT NULL
+    id       SERIAL PRIMARY KEY,
+    name     VARCHAR(255) NOT NULL UNIQUE,
+    price    float        NOT NULL,
+    quantity integer      NOT NULL
 );
+
+CREATE UNIQUE INDEX idx_products_name ON products (name);
 
 INSERT INTO roles (role_name)
 VALUES ('ADMIN'),

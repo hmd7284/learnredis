@@ -6,9 +6,9 @@ import com.hmd.learnredis.dtos.requests.RefreshTokenRequest;
 import com.hmd.learnredis.dtos.requests.RegisterRequest;
 import com.hmd.learnredis.dtos.responses.LoginResponse;
 import com.hmd.learnredis.dtos.responses.RefreshTokenResponse;
+import com.hmd.learnredis.exceptions.AlreadyExistsException;
 import com.hmd.learnredis.exceptions.NotFoundException;
 import com.hmd.learnredis.exceptions.PasswordException;
-import com.hmd.learnredis.exceptions.AlreadyExistsException;
 import com.hmd.learnredis.mappers.UserMapper;
 import com.hmd.learnredis.models.RefreshToken;
 import com.hmd.learnredis.models.Role;
@@ -82,7 +82,7 @@ public class AuthService {
 
     @Transactional
     public UserDTO register(RegisterRequest request) {
-        if (userRepository.findByUsername(request.getUsername()).isPresent())
+        if (userRepository.existsByUsername(request.getUsername()))
             throw new AlreadyExistsException(String.format("Username %s already exists", request.getUsername()));
         if (!request.getPassword().equals(request.getConfirmPassword()))
             throw new PasswordException("Confirm password mismatch");

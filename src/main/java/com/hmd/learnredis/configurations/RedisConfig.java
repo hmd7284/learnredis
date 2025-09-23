@@ -3,22 +3,17 @@ package com.hmd.learnredis.configurations;
 import io.lettuce.core.ReadFrom;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.cache.RedisCacheConfiguration;
-import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisClusterConfiguration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
-import org.springframework.data.redis.serializer.RedisSerializationContext;
-import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
-
-import java.time.Duration;
 
 @Configuration
 public class RedisConfig {
+
     private final ClusterConfigurationProperties clusterConfigurationProperties;
 
     public RedisConfig(ClusterConfigurationProperties clusterConfigurationProperties) {
@@ -44,24 +39,9 @@ public class RedisConfig {
         redisTemplate.setKeySerializer(keySerializer);
         redisTemplate.setHashKeySerializer(keySerializer);
         GenericJackson2JsonRedisSerializer valueSerializer = new GenericJackson2JsonRedisSerializer();
-//        Jackson2JsonRedisSerializer<Object> valueSerializer = new Jackson2JsonRedisSerializer<>(Object.class);
         redisTemplate.setValueSerializer(valueSerializer);
         redisTemplate.setHashValueSerializer(valueSerializer);
         redisTemplate.afterPropertiesSet();
         return redisTemplate;
-    }
-
-    @Bean
-    public RedisCacheManager redisCacheManager(RedisConnectionFactory redisConnectionFactory) {
-        RedisSerializer<Object> jsonSerializer = new GenericJackson2JsonRedisSerializer();
-        RedisCacheConfiguration configuration = RedisCacheConfiguration.defaultCacheConfig()
-                .disableCachingNullValues()
-                .entryTtl(Duration.ofHours(1))
-                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(RedisSerializer.string()))
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(jsonSerializer));
-        return RedisCacheManager.builder(redisConnectionFactory)
-                .cacheDefaults(configuration)
-                .transactionAware()
-                .build();
     }
 }

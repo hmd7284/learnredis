@@ -13,4 +13,9 @@ public class UserDTO {
     private Long id;
     private String username;
     private Set<String> roles;
+
+    @Override
+    public String toString() {
+        return "Username: " + username + ", Roles: " + String.join(", ", roles);
+    }
 }

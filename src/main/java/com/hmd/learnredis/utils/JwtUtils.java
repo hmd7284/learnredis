@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import javax.servlet.http.HttpServletRequest;
 import java.text.ParseException;
 import java.util.Date;
+import java.util.UUID;
 
 @Component
 public class JwtUtils {
@@ -31,10 +32,16 @@ public class JwtUtils {
 
     public String generateToken(String username) {
         JWSHeader jwsHeader = new JWSHeader.Builder(JWSAlgorithm.HS512).type(JOSEObjectType.JWT).build();
-        JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder().subject(username).issuer("hmd").issueTime(new Date()).expirationTime(new Date(System.currentTimeMillis() + expiration * 1000L)).build();
+        JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
+                .subject(username)
+                .issuer("hmd")
+                .issueTime(new Date()).expirationTime(new Date(System.currentTimeMillis() + expiration * 1000L))
+                .jwtID(UUID.randomUUID().toString())
+                .build();
         Payload payload = new Payload(jwtClaimsSet.toJSONObject());
         JWSObject jwsObject = new JWSObject(jwsHeader, payload);
         try {
+//            byte[] key = Base64.getDecoder().decode(secret);
             jwsObject.sign(new MACSigner(secret.getBytes()));
             return jwsObject.serialize();
         } catch (JOSEException e) {

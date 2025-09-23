@@ -7,7 +7,9 @@ import javax.persistence.*;
 @Getter
 @Setter
 @Entity
-@Table(name = "products")
+@Table(name = "products", indexes = {
+        @Index(name = "idx_products_name", columnList = "name")
+})
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor

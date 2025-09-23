@@ -12,7 +12,10 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "users")
+@Table(name = "users", indexes = {
+        @Index(name = "idx_users_username", columnList = "username")
+})
+
 public class User {
     @Id
     @org.springframework.data.annotation.Id

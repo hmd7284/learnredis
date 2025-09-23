@@ -38,7 +38,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponseDTO> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
-        List<String> errors = e.getBindingResult().getFieldErrors().stream().map(FieldError::getDefaultMessage).toList();
+        List<String> errors = e.getBindingResult().getFieldErrors().stream().map(FieldError::getDefaultMessage).collect(Collectors.toList());
         return buildErrorResponse(HttpStatus.BAD_REQUEST, "Data validation failed", errors);
     }
 
@@ -54,7 +54,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ErrorResponseDTO> handleConstraintViolationException(ConstraintViolationException e) {
-        List<String> errors = e.getConstraintViolations().stream().map(ConstraintViolation::getMessage).toList();
+        List<String> errors = e.getConstraintViolations().stream().map(ConstraintViolation::getMessage).collect(Collectors.toList());
         return buildErrorResponse(HttpStatus.BAD_REQUEST, "Data violated constraints", errors);
     }
 

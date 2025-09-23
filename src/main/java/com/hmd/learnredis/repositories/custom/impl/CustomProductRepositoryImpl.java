@@ -38,7 +38,10 @@ public class CustomProductRepositoryImpl implements CustomProductRepository {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<Product> cq = cb.createQuery(Product.class);
         Root<Product> root = cq.from(Product.class);
-        cq.where(cb.and(buildPredicates(request, cb, root).toArray(new Predicate[0])));
+        List<Predicate> predicates = buildPredicates(request, cb, root);
+        if (!predicates.isEmpty())
+            cq.where(cb.and(predicates.toArray(new Predicate[0])));
+
         List<Order> orders = new ArrayList<>();
         if (request.getSortByPrice())
             orders.add(request.getPriceDesc() ? cb.desc(root.get("price")) : cb.asc(root.get("price")));
@@ -51,8 +54,11 @@ public class CustomProductRepositoryImpl implements CustomProductRepository {
 
         CriteriaQuery<Long> countQ = cb.createQuery(Long.class);
         Root<Product> countRoot = countQ.from(Product.class);
-        countQ.select(cb.countDistinct(countRoot.get("id")))
-                .where(cb.and(buildPredicates(request, cb, countRoot).toArray(new Predicate[0])));
+        List<Predicate> countPredicates = buildPredicates(request, cb, countRoot);
+        if (!countPredicates.isEmpty())
+            countQ.select(cb.countDistinct(countRoot.get("id"))).where(cb.and(countPredicates.toArray(new Predicate[0])));
+        else
+            countQ.select(cb.count(countRoot));
         long total = entityManager.createQuery(countQ).getSingleResult();
 
         return new PageImpl<>(tq.getResultList(), pageable, total);

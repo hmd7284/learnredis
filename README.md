@@ -22,6 +22,8 @@ Demo Spring Boot Application with Redis Cluster setup and auth with JWT
    POSTGRES_USER=YOUR_POSTGRES_USER
    POSTGRES_PASSWORD=YOUR_POSTGRES_PASSWORD
    POSTGRES_PORT=YOUR_POSTGRES_PORT
+   
+   JWT_SECRET=YOUR_JWT_SECRET_KEY
    ```
 ### Generate config file for 6 cluster nodes
    ```sh

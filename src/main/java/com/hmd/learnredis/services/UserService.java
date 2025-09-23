@@ -13,13 +13,12 @@ import com.hmd.learnredis.exceptions.PasswordException;
 import com.hmd.learnredis.mappers.UserMapper;
 import com.hmd.learnredis.models.Role;
 import com.hmd.learnredis.models.User;
+import com.hmd.learnredis.producer.MessageProducer;
 import com.hmd.learnredis.repositories.RoleRepository;
 import com.hmd.learnredis.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,11 +35,11 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
     private final RedisService redisService;
+    private final MessageProducer messageProducer;
 
     @Transactional
     public PaginatedResponse getUsers(SearchRequest searchRequest) {
-        Pageable pageable = PageRequest.of(searchRequest.getPage() - 1, searchRequest.getPageSize());
-        Page<UserDTO> results = userRepository.findAll(pageable).map(userMapper::toUserDTO);
+        Page<UserDTO> results = userRepository.findAll(PageRequest.of(searchRequest.getPage() - 1, searchRequest.getPageSize())).map(userMapper::toUserDTO);
         return PaginatedResponse.builder()
                 .meta(Meta.builder()
                         .page(results.getNumber() + 1)
@@ -54,7 +53,7 @@ public class UserService {
 
     @Transactional
     public UserDTO createUser(CreateUserRequest request) {
-        if (userRepository.findByUsername(request.getUsername()).isPresent())
+        if (userRepository.existsByUsername(request.getUsername()))
             throw new AlreadyExistsException(String.format("Username %s already exists", request.getUsername()));
         Set<Role> roles = request.getRoles().stream().map(roleName -> roleRepository.findByRoleName(roleName).orElseThrow(() -> new NotFoundException("Role not found: " + roleName))).collect(Collectors.toSet());
         User newUser = User.builder()
@@ -65,33 +64,34 @@ public class UserService {
         User savedUser = userRepository.save(newUser);
         UserDTO userDTO = userMapper.toUserDTO(savedUser);
         redisService.put(String.format("user:%s", savedUser.getId()), userDTO);
+        messageProducer.sendMessage("user", "Created new user: " + userDTO);
         return userDTO;
     }
 
     @Transactional
     public UserDTO updateUser(Long id, UpdateUserRequest request) {
         User user = userRepository.findById(id).orElseThrow(() -> new NotFoundException(String.format("User with id %s not found", id)));
-        if (user.getRoles().stream().anyMatch(role -> role.getRoleName().equals("ADMIN")))
-            throw new AccessDeniedException("You are not authorized to perform this operation");
         if (!user.getUsername().equals(request.getUsername())) {
-            Optional<User> existingUser = userRepository.findByUsername(request.getUsername());
-            if (existingUser.isPresent())
+            if (userRepository.existsByUsername(request.getUsername()))
                 throw new AlreadyExistsException(String.format("Username %s already exists", request.getUsername()));
             user.setUsername(request.getUsername());
         }
-        Set<Role> roles = request.getRoles().stream().map(roleName -> roleRepository.findByRoleName(roleName).orElseThrow(() -> new NotFoundException("Role not found: " + roleName))).collect(Collectors.toSet());
+        Set<Role> roles = roleRepository.findByRoleNameIn(request.getRoles());
+        if (roles.isEmpty() || roles.size() != request.getRoles().size()) {
+            Set<String> roleNames = roles.stream().map(Role::getRoleName).collect(Collectors.toSet());
+            Set<String> invalidRoles = request.getRoles().stream().filter(role -> !roleNames.contains(role)).collect(Collectors.toSet());
+            throw new NotFoundException("Roles not found: " + String.join(", ", invalidRoles));
+        }
         user.setRoles(roles);
         User savedUser = userRepository.save(user);
         UserDTO userDTO = userMapper.toUserDTO(savedUser);
         redisService.put(String.format("user:%s", id), userDTO);
+        messageProducer.sendMessage("user", "Updated user: " + userDTO);
         return userDTO;
     }
 
     @Transactional
     public void deleteUser(Long id) {
-        User user = userRepository.findById(id).orElseThrow(() -> new NotFoundException(String.format("User with id %s not found", id)));
-        if (user.getRoles().stream().anyMatch(role -> role.getRoleName().equals("ADMIN")))
-            throw new AccessDeniedException("You are not authorized to perform this operation");
         userRepository.deleteById(id);
         redisService.delete(String.format("user:%s", id));
     }
