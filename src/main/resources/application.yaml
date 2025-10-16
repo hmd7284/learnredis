@@ -40,6 +40,9 @@ spring:
       auto-offset-reset: earliest
       max-poll-records: 1
 
+  jackson:
+    serialization:
+      write-date-keys-as-timestamps: false
 jwt:
   accessExpiration: 86400
   refreshExpiration: 2592000
