@@ -47,3 +47,7 @@ jwt:
   accessExpiration: 86400
   refreshExpiration: 2592000
   secret: ${JWT_SECRET}
+
+vetc:
+  api:
+    base-url: http://localhost:8080/api/test

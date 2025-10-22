@@ -7,10 +7,8 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,13 +17,11 @@ import java.util.List;
 public class ExcelReaderService {
     private final ExcelUtils excelUtils;
 
-    public List<ExcelRow> readExcelFile(InputStream inputStream) throws Exception {
+    public List<ExcelRow> readExcelFile(Workbook workbook) {
         List<ExcelRow> excelRows = new ArrayList<>();
-        Workbook workbook = new XSSFWorkbook(inputStream);
         Sheet sheet = workbook.getSheetAt(0);
         Row headerRow = sheet.getRow(0);
         if (headerRow == null) return excelRows;
-
         List<String> headers = new ArrayList<>();
         for (Cell cell : headerRow) {
             headers.add(excelUtils.getCellStringValue(cell));
@@ -34,13 +30,14 @@ public class ExcelReaderService {
             Row dataRow = sheet.getRow(i);
             if (dataRow == null) continue;
             ExcelRow excelRow = new ExcelRow();
+            excelRow.setRowNum(i);
             for (int j = 0; j < headers.size(); ++j) {
                 excelRow.put(headers.get(j), excelUtils.getCellValue(dataRow.getCell(j)));
             }
             excelRows.add(excelRow);
         }
-        workbook.close();
-        inputStream.close();
         return excelRows;
     }
+
+
 }

@@ -1,6 +1,7 @@
 package com.hmd.learnredis.dtos;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Getter;
@@ -16,6 +17,9 @@ import java.util.List;
 @Setter
 @Builder
 public class InvoiceDTO {
+    @JsonIgnore
+    private String invoiceId;
+
     @JsonProperty(value = "source_org", required = true)
     @NotBlank(message = "source_org is required")
     @Size(max = 20, message = "source_org cannot exceed 40 characters")
@@ -40,6 +44,9 @@ public class InvoiceDTO {
     @JsonProperty(value = "trans_date", required = true)
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private String transDate;
+
+    @JsonIgnore
+    private String secureId;
 
     @JsonProperty("payment_method")
     private String paymentMethod;
@@ -123,4 +130,7 @@ public class InvoiceDTO {
     @JsonProperty("items")
     @Valid
     private List<InvoiceItemDTO> items;
+
+    @JsonIgnore
+    private List<Integer> rowNums;
 }

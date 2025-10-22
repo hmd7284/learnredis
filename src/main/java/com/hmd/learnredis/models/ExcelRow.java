@@ -12,6 +12,7 @@ import java.util.Map;
 @Setter
 public class ExcelRow {
     private Map<String, Object> data = new HashMap<>();
+    private int rowNum;
 
     public Object get(String key) {
         return data.get(key);
