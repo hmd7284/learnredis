@@ -50,4 +50,4 @@ jwt:
 
 vetc:
   api:
-    base-url: http://localhost:8080/api/test
+    base-url: http://localhost:8081/api/test

@@ -10,11 +10,12 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
-import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
+
+import java.io.IOException;
 
 @Controller
 @RequiredArgsConstructor
@@ -24,17 +25,14 @@ public class InvoiceController {
     private final InvoiceService invoiceService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public Mono<ResponseEntity<Resource>> readExcel(@RequestPart("file") MultipartFile file) {
-        return Mono.fromCallable(file::getInputStream)
-                .subscribeOn(Schedulers.boundedElastic())
-                .flatMap(invoiceService::adjustInvoices)
-                .map(bytes -> {
-                    String fileName = "adjusted_invoice.xlsx";
-                    Resource resource = new ByteArrayResource(bytes);
-                    return ResponseEntity.ok()
-                            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
-                            .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                            .body(resource);
-                });
+    public ResponseEntity<Resource> adjustInvoices(@RequestPart("file") MultipartFile file, @RequestHeader(HttpHeaders.AUTHORIZATION) String token) throws IOException {
+        byte[] bytes = invoiceService.adjustInvoices(file.getInputStream(), token);
+        String fileName = "adjusted_invoice.xlsx";
+        Resource resource = new ByteArrayResource(bytes);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(resource);
     }
+
 }

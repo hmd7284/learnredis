@@ -32,15 +32,15 @@ public class JwtFilter extends OncePerRequestFilter {
             String token = request.getHeader("Authorization");
             if (token != null && token.startsWith("Bearer ")) {
                 token = token.substring(7);
-                String username = jwtUtils.extractUsername(token);
-                if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                    CustomUserDetails userDetails = (CustomUserDetails) userDetailsService.loadUserByUsername(username);
-                    if (username.equals(userDetails.getUsername())) {
-                        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                        authentication.setDetails(new WebAuthenticationDetails(request));
-                        SecurityContextHolder.getContext().setAuthentication(authentication);
-                    }
-                }
+//                String username = jwtUtils.extractUsername(token);
+//                if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+//                    CustomUserDetails userDetails = (CustomUserDetails) userDetailsService.loadUserByUsername(username);
+//                    if (username.equals(userDetails.getUsername())) {
+//                        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+//                        authentication.setDetails(new WebAuthenticationDetails(request));
+//                        SecurityContextHolder.getContext().setAuthentication(authentication);
+//                    }
+//                }
             }
         } catch (InvalidJwtException e) {
             response.setStatus(HttpStatus.UNAUTHORIZED.value());
