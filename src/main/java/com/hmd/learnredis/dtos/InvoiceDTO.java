@@ -94,7 +94,7 @@ public class InvoiceDTO {
     @Size(max = 50, message = "cust_bank cannot exceed 50 characters")
     private String custBank;
 
-    @JsonProperty("total_amount_before_tax")
+    @JsonProperty("total_amount_befor_tax")
     private BigDecimal totalAmountBeforeTax;
 
     @JsonProperty("total_tax_code")

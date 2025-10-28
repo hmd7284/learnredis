@@ -51,7 +51,7 @@ public class InvoiceItemDTO {
     @JsonProperty(value = "amount_discount", defaultValue = "0.0")
     private BigDecimal amountDiscount;
 
-    @JsonProperty("amount_before_tax")
+    @JsonProperty("amount_befor_tax")
     private BigDecimal amountBeforeTax;
 
     @JsonProperty("amount_after_tax")
